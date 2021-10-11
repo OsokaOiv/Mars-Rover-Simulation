@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/MarsPathfinderRover.unity
+    guid: eeb4fcf6356c9ea40ad87339aef7594c
   m_configObjects: {}
