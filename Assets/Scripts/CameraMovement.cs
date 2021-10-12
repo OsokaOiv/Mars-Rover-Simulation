@@ -2,18 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraMovement : MonoBehaviour
+public class CameraMovement : MonoSingleton<CameraMovement>
 {
-    [SerializeField] private Transform ResetPosition;
-
+    #region Attributes
+    [SerializeField] private Transform ResetTransform;
     [SerializeField] private float MaxVelocity = 50f;
     [SerializeField] private float NormalVelocity = 20f;
     [SerializeField] private float TurnAround = 7f;
+    [SerializeField] private LayerMask LayerMask;
 
+    private Camera Camera;
     private float Velocity;
+
+    public Queue<Vector3> Waypoints = new Queue<Vector3>();
+    #endregion
+
+    #region Start and Update
     // Start is called before the first frame update
     void Start()
     {
+        Camera = this.gameObject.GetComponent<Camera>();
         Velocity = NormalVelocity;
     }
 
@@ -23,13 +31,15 @@ public class CameraMovement : MonoBehaviour
         ChangeVelocity();
         Movement();
         Rotation();
-        
-        if (Input.GetKeyDown(KeyCode.R) && ResetPosition != null)
+        ResetPosition();
+        if (Input.GetMouseButtonDown(0))
         {
-            transform.SetPositionAndRotation(ResetPosition.position, Quaternion.identity);
+            GetMouse3DPosition();
         }
     }
+    #endregion
 
+    #region Movement Methods
     private void ChangeVelocity()
     {
         if (Input.GetKeyDown(KeyCode.LeftShift))
@@ -68,7 +78,27 @@ public class CameraMovement : MonoBehaviour
         if (Input.GetMouseButton(1))
         {
             transform.eulerAngles += TurnAround * new Vector3(-Input.GetAxis("Mouse Y"), Input.GetAxis("Mouse X"), 0);
-
         }
     }
+
+    private void ResetPosition()
+    {
+        if (Input.GetKeyDown(KeyCode.R) && ResetTransform != null)
+        {
+            transform.SetPositionAndRotation(ResetTransform.position, Quaternion.identity);
+        }
+    }
+    #endregion
+
+    #region Waypoint Methods
+    private void GetMouse3DPosition()
+    {
+        Ray ray = Camera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, LayerMask))
+        {
+            Debug.Log(raycastHit.point);
+            Waypoints.Enqueue(raycastHit.point);
+        }
+    }
+    #endregion
 }
