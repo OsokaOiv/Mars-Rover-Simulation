@@ -9,7 +9,7 @@ public class CameraMovement : MonoSingleton<CameraMovement>
     [SerializeField] private float MaxVelocity = 50f;
     [SerializeField] private float NormalVelocity = 20f;
     [SerializeField] private float TurnAround = 7f;
-    [SerializeField] private LayerMask LayerMask;
+    [SerializeField] private LayerMask GroundLayer;
 
     private Camera Camera;
     private float Velocity;
@@ -94,7 +94,7 @@ public class CameraMovement : MonoSingleton<CameraMovement>
     private void GetMouse3DPosition()
     {
         Ray ray = Camera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, LayerMask))
+        if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, GroundLayer))
         {
             Debug.Log(raycastHit.point);
             Waypoints.Enqueue(raycastHit.point);
