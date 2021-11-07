@@ -36,7 +36,7 @@ public class CameraMovement : MonoSingleton<CameraMovement>
         {
             GetMouse3DPosition();
         }
-        else if (Input.GetKeyUp(KeyCode.T))
+        else if (Input.GetKeyUp(KeyCode.T) && Waypoints.Count > 0)
         {
             Waypoints.Dequeue();
         }
