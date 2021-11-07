@@ -2,79 +2,77 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarsPathfinderRover : MonoBehaviour
-{
+public class MarsPathfinderRover : MonoBehaviour {
     #region Attribute
-    public int TimeMultiplier = 100;
-
+    public int TimeMultiplier = 100; // Geschwindigkeit der Zeit
     [SerializeField] private LayerMask GroundLayer;
-
-    private float MovementSpeed = .0069f;
-    private float MaxTurnAngle = 1;
-    private float RotationSpeed = .2f;
-    private float RoverDiskRadius = 2.5f;
-    private float RoverHeightAboveGround = .05f;
-    private float RoverWedge = 5;
-    private bool rotateToWaypoint = true; // Wird für kurze Zeit auf false gesetz, wenn ein Hindernis im Weg ist
+    [SerializeField] private string GroundName;
+    private const float MovementSpeed = .0069f; // 0,69 cm/s
+    private const float SegmentLength = .065f; // 6,5 cm
+    private const float RoverDiskRadius = 2.5f; // 2,5 m
+    private const float ScanningTime = 120; // 120 s
+    private const float RoverHeightAboveGround = .05f;
+    private const float MaxTurnAngle = 1;
+    private const float RotationSpeed = .2f;
+    private float DistanceToDrive = 0;
+    private int Hazards = 0; // Anzahl Hindernisse
+    private bool ShouldTurnToWaypoint = true; // Wird temporär auf false gesetzt, wenn ein Hindernis im Weg ist
     #endregion
 
     // Wird zur Initialisierung aufgerufen
-    void Start()
-    {
-        ParallelToGround();
+    void Start() {
+        ParallelToGround(); // Rover parallel zum Boden orientieren
+        StartCoroutine(ScanningCoroutine());
     }
 
-    // Der Kontrollzyklus wird wiederholt aufgerufen
-    void Update()
-    {
-        if (CameraMovement.Instance.Waypoints.Count > 0) // Wenn es mehr als 0 Ziele gibt
-        {
-            // Wenn ein Hindernis im Sichtfeld ist
-            if (HazardInView())
-            {
-
-            }
-            else // sonst
-            {
-                // Wenn der Wegpunkt erreicht wurde
-                if (WaypointReached(CameraMovement.Instance.Waypoints.Peek()))
-                {
+    // Die Kontrollschleife wird wiederholt aufgerufen
+    void Update() {
+        if (CameraMovement.Instance.Waypoints.Count > 0) { // Wenn es mehr als 0 Wegpunkte gibt
+            if (DistanceToDrive > 0 && Hazards == 0) { // Wenn er fahren kann
+                if (WaypointReached(CameraMovement.Instance.Waypoints.Peek())) { // Wenn der Wegpunkt erreicht wurde
                     CameraMovement.Instance.Waypoints.Dequeue(); // Wegpunkt entfernen
                     return; // Nicht weiter machen
                 }
-
-                MoveForward();
-                if (rotateToWaypoint)
+                MoveForward(); // Vorwärts fahren
+                if (ShouldTurnToWaypoint)
                     RotateTowardsWaypoint(CameraMovement.Instance.Waypoints.Peek());
                 ParallelToGround();
+                if (DistanceToDrive <= 0) { // Wenn ein Segment abgefahren wurde dann scannen
+                    StartCoroutine(ScanningCoroutine());
+                }
+            } else if (Hazards > 0) {
+                RotateInPlace();
             }
         }
     }
 
-    #region Bewegung und Rotation zum Wegpunkt
+    // Simuliert Scanzeit und beendet Scan, wenn es keine Hindernisse mehr gibt
+    IEnumerator ScanningCoroutine() {
+        yield return new WaitForSeconds(ScanningTime / TimeMultiplier);
+        if (Hazards == 0) { NoHazardInView(); }
+        else { StartCoroutine(ScanningCoroutine()); }
+    }
 
+    #region Bewegung und Rotation zum Wegpunkt
     // Bewegt den Rover nach vorne
-    private void MoveForward()
-    {
+    private void MoveForward() {
         transform.Translate(Vector3.forward * Time.deltaTime * TimeMultiplier * MovementSpeed);
+        DistanceToDrive -= Time.deltaTime * TimeMultiplier * MovementSpeed;
     }
 
     // Rotiert den Rover parallel zum Boden
-    private void ParallelToGround()
-    {
+    private void ParallelToGround() {
         Ray ray = new Ray(transform.position, Vector3.down);
         if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, GroundLayer))
         {
             // Berechnung der y Koordinate
             transform.position = new Vector3(transform.position.x, raycastHit.point.y + RoverHeightAboveGround, transform.position.z);
-            // Rotation parallel zum Boden
-            transform.rotation = Quaternion.FromToRotation(transform.up, raycastHit.normal) * transform.rotation;
+            transform.rotation = Quaternion.FromToRotation(transform.up, raycastHit.normal) * transform.rotation; // Orientation parallel zum Boden
         }
     }
 
     // Rotiert den Rover zum Wegpunkt
-    private void RotateTowardsWaypoint(Vector3 waypoint)
-    {
+    private void RotateTowardsWaypoint(Vector3 waypoint) {
         // Berechnung vom Vector von der Rover Position zum Wegpunkt
         Vector3 vectorToWaypoint = waypoint - transform.position;
 
@@ -124,10 +122,34 @@ public class MarsPathfinderRover : MonoBehaviour
 
     #region Hazard Avoidance
 
-    // Gibt true zurück wenn ein Hindernis im 2,5 Meter Radius ist
-    private bool HazardInView()
+    // Wird aufgerufen, wenn ein Hindernis in das Sichtfeld vom Rover kommt
+    private void OnTriggerEnter(Collider other)
     {
-        return false;
+        if (other.gameObject.name == GroundName)
+            return;
+        ShouldTurnToWaypoint = false;
+        Hazards++;
+    }
+
+    // Wird aufgerufen, wenn ein Hindernis das Sichtfeld verlässt
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.name == GroundName)
+            return;
+        Hazards--;
+    }
+
+    // Stellt die Distanz ohne Scannen ein
+    private void NoHazardInView()
+    {
+        DistanceToDrive = SegmentLength * 10;
+        ShouldTurnToWaypoint = true;
+    }
+
+    // Auf der Stelle nach rechts drehen
+    private void RotateInPlace()
+    {
+        transform.Rotate(Vector3.up, MaxTurnAngle * Time.deltaTime * TimeMultiplier * RotationSpeed);
     }
 
     #endregion

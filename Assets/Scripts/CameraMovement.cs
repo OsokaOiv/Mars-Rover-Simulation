@@ -36,6 +36,10 @@ public class CameraMovement : MonoSingleton<CameraMovement>
         {
             GetMouse3DPosition();
         }
+        else if (Input.GetKeyUp(KeyCode.T))
+        {
+            Waypoints.Dequeue();
+        }
     }
     #endregion
 

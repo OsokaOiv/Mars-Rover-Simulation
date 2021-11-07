@@ -389,7 +389,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 400008}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Rock1_grup5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
