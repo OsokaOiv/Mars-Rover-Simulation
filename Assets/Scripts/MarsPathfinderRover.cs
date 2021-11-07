@@ -4,65 +4,70 @@ using UnityEngine;
 
 public class MarsPathfinderRover : MonoBehaviour
 {
-    #region Attributes
-    [SerializeField] private float Velocity = .69f;
-    [SerializeField] private float ScanDistance = 5f;
-    [SerializeField] private float RotationSpeed = .5f;
-    [SerializeField] private WheelCollider[] wheels;
-    private Rigidbody rb;
+    #region Attribute
+    public int timeMultiplier = 100;
+
+    [SerializeField] float maxTurnAngle = 1;
+    [SerializeField] float stepLength = .5f;
+    [SerializeField] float rotationSpeed = 1f;
+
+    private float movementSpeed = .0069f;
     #endregion
-    #region Start and FixedUpdate
-    // Start is called before the first frame update
+
+    // Wird zur Initialisierung aufgerufen
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        
     }
 
-    // Update is called once per frame
-    void FixedUpdate()
+    // Der Kontrollzyklus wird wiederholt aufgerufen
+    void Update()
     {
-        if (CameraMovement.Instance.Waypoints.Count != 0)
+        if (CameraMovement.Instance.Waypoints.Count > 0) // Wenn es mehr als kein Ziel gibt
         {
-            DriveToWaypoint();
+            moveForward();
+            rotateTowardsWaypoint(CameraMovement.Instance.Waypoints.Peek());
         }
     }
+
+    #region Bewegung und Rotation zum Wegpunkt
+
+    private void moveForward()
+    {
+        transform.Translate(Vector3.forward * Time.deltaTime * timeMultiplier * movementSpeed);
+    }
+
+    private void rotateTowardsWaypoint(Vector3 waypoint)
+    {
+        // Berechnung vom Vector von der Rover Position zum Wegpunkt
+        Vector3 vectorToWaypoint = waypoint - transform.position;
+
+        // Konvertieren von 3D zu 2D Koordinate der Vectoren
+        Vector2 vectorToWaypoint2D = new Vector2(vectorToWaypoint.x, vectorToWaypoint.z);
+        Vector2 forward2D = new Vector2 (transform.forward.x, transform.forward.z);
+
+        // Berechnung des Winkels
+        float radians = Mathf.Acos(Vector2.Dot(vectorToWaypoint2D.normalized, forward2D.normalized));
+        float angle = radians * Mathf.Rad2Deg;
+
+        // Maximale Drehung von maxTurnAngle
+        angle = angle < maxTurnAngle ? angle : maxTurnAngle;
+
+        // Beurteilung ob diese Drehung nach rechts oder links erfolgen soll
+        Vector2 right2D = new Vector2(transform.right.x, transform.right.z);
+        Vector2 left2D = -right2D;
+        if (Mathf.Acos(Vector2.Dot(vectorToWaypoint2D.normalized, left2D.normalized))*Mathf.Rad2Deg < 
+            Mathf.Acos(Vector2.Dot(vectorToWaypoint2D.normalized, right2D.normalized)) * Mathf.Rad2Deg) {
+            angle = -angle;
+        }
+
+        // Rotation um die y-Achse (Achse nach oben) des Rovers
+        transform.Rotate(Vector3.up, angle * Time.deltaTime * timeMultiplier * rotationSpeed);
+    }
+
     #endregion
 
-    #region Movement Methods
-    private void DriveToWaypoint()
-    {
-        Vector3 waypoint = CameraMovement.Instance.Waypoints.Peek();
-        Vector3 targetDir = new Vector3(waypoint.x, 0, waypoint.z) - new Vector3(transform.position.x, 0, transform.position.z);
+    #region Hazard Avoidance
 
-        Vector3 newDirection = Vector3.RotateTowards(transform.forward, targetDir, RotationSpeed * Time.fixedDeltaTime, 0);
-
-        foreach (WheelCollider w in wheels)
-        {
-            w.motorTorque = Velocity * Time.fixedDeltaTime;
-            //w.steerAngle
-        }
-    }
-    private void ArcToWaypoint()
-    {
-        Vector3 waypoint = CameraMovement.Instance.Waypoints.Peek();
-        Vector3 targetDir = new Vector3(waypoint.x, 0, waypoint.z) - new Vector3(transform.position.x, 0, transform.position.z);
-
-        Vector3 newDirection = Vector3.RotateTowards(transform.forward, targetDir, RotationSpeed * Time.fixedDeltaTime, 0);
-
-        Debug.Log(newDirection);
-        Debug.Log(transform.forward);
-
-        if (newDirection == transform.forward)
-            CameraMovement.Instance.Waypoints.Dequeue();
-
-        transform.rotation = Quaternion.LookRotation(newDirection);
-        //rb.velocity = (transform.forward + rb.velocity).normalized * Time.fixedDeltaTime * Velocity;
-        //rb.AddRelativeForce(Vector3.forward * Time.fixedDeltaTime * Velocity);
-
-        //transform.Translate(transform.forward * Velocity * Time.fixedDeltaTime);
-        
-        //leftWheel.motorTorque = Time.fixedDeltaTime * Velocity;
-        //rightWheel.motorTorque = Time.fixedDeltaTime * Velocity;
-    }
     #endregion
 }
