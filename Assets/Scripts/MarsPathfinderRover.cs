@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MarsPathfinderRover : MonoBehaviour {
@@ -18,7 +17,6 @@ public class MarsPathfinderRover : MonoBehaviour {
     private int Hazards = 0; // Anzahl Hindernisse
     private bool ShouldTurnToWaypoint = true; // Wird temporär auf false gesetzt, wenn ein Hindernis im Weg ist
     #endregion
-
     // Wird zur Initialisierung aufgerufen
     void Start() {
         ParallelToGround(); // Rover parallel zum Boden orientieren
@@ -51,8 +49,7 @@ public class MarsPathfinderRover : MonoBehaviour {
         yield return new WaitForSeconds(ScanningTime / TimeMultiplier);
         if (Hazards == 0) { NoHazardInView(); }
         else { StartCoroutine(ScanningCoroutine()); }
-    }
-
+    } 
     #region Bewegung und Rotation zum Wegpunkt
     // Bewegt den Rover nach vorne
     private void MoveForward() {
@@ -62,12 +59,10 @@ public class MarsPathfinderRover : MonoBehaviour {
 
     // Rotiert den Rover parallel zum Boden
     private void ParallelToGround() {
-        Ray ray = new Ray(transform.position, Vector3.down);
-        if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, GroundLayer))
-        {
-            // Berechnung der y Koordinate
+        Ray ray = new Ray(transform.position, Vector3.down); // Checkt den Boden direkt unter dem Rover mit einem Ray
+        if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, GroundLayer)) { 
             transform.position = new Vector3(transform.position.x, raycastHit.point.y + RoverHeightAboveGround, transform.position.z);
-            transform.rotation = Quaternion.FromToRotation(transform.up, raycastHit.normal) * transform.rotation; // Orientation parallel zum Boden
+            transform.rotation = Quaternion.FromToRotation(transform.up, raycastHit.normal) * transform.rotation; // Parallel zum Boden
         }
     }
 
@@ -104,27 +99,16 @@ public class MarsPathfinderRover : MonoBehaviour {
     {
         // Wenn die x-Koordinate vom Wegpunkt nicht in der 5m Scheibe ist
         if (waypoint.x <= transform.position.x - RoverDiskRadius || waypoint.x >= transform.position.x + RoverDiskRadius)
-        {
-            return false;
-        }
+        { return false; }
         // Wenn die z-Koordinate vom Wegpunkt nicht in der 5m Scheibe ist
-        else if (waypoint.z <= transform.position.z - RoverDiskRadius || waypoint.z >= transform.position.z + RoverDiskRadius)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    #endregion
-
-    #region Hazard Avoidance
-
+        else if (waypoint.z <= transform.position.z - RoverDiskRadius || waypoint.z >= transform.position.z + RoverDiskRadius) 
+        { return false; }
+        else { return true; }
+    } 
+    #endregion 
+    #region Hazard Avoidance 
     // Wird aufgerufen, wenn ein Hindernis in das Sichtfeld vom Rover kommt
-    private void OnTriggerEnter(Collider other)
-    {
+    private void OnTriggerEnter(Collider other) {
         if (other.gameObject.name == GroundName)
             return;
         ShouldTurnToWaypoint = false;
@@ -139,18 +123,13 @@ public class MarsPathfinderRover : MonoBehaviour {
         Hazards--;
     }
 
-    // Stellt die Distanz ohne Scannen ein
-    private void NoHazardInView()
-    {
+    // Stellt die Distanz ein
+    private void NoHazardInView() {
         DistanceToDrive = SegmentLength * 10;
         ShouldTurnToWaypoint = true;
     }
 
     // Auf der Stelle nach rechts drehen
-    private void RotateInPlace()
-    {
-        transform.Rotate(Vector3.up, MaxTurnAngle * Time.deltaTime * TimeMultiplier * RotationSpeed);
-    }
-
+    private void RotateInPlace() { transform.Rotate(Vector3.up, MaxTurnAngle * Time.deltaTime * TimeMultiplier * RotationSpeed); } 
     #endregion
 }
