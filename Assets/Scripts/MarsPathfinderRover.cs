@@ -25,15 +25,15 @@ public class MarsPathfinderRover : MonoBehaviour {
 
     // Die Kontrollschleife wird wiederholt aufgerufen
     void Update() {
-        if (CameraMovement.Instance.Waypoints.Count > 0) { // Wenn es mehr als 0 Wegpunkte gibt
+        if (Waypoint.Instance.Waypoints.Count > 0) { // Wenn es mehr als 0 Wegpunkte gibt
             if (DistanceToDrive > 0 && Hazards == 0) { // Wenn er fahren kann
-                if (WaypointReached(CameraMovement.Instance.Waypoints.Peek())) { // Wenn der Wegpunkt erreicht wurde
-                    CameraMovement.Instance.Waypoints.Dequeue(); // Wegpunkt entfernen
+                if (WaypointReached(Waypoint.Instance.Waypoints.Peek())) { // Wenn der Wegpunkt erreicht wurde
+                    Waypoint.Instance.Waypoints.Dequeue(); // Wegpunkt entfernen
                     return; // Nicht weiter machen
                 }
                 MoveForward(); // Vorwärts fahren
                 if (ShouldTurnToWaypoint)
-                    RotateTowardsWaypoint(CameraMovement.Instance.Waypoints.Peek());
+                    RotateTowardsWaypoint(Waypoint.Instance.Waypoints.Peek());
                 ParallelToGround();
                 if (DistanceToDrive <= 0) { // Wenn ein Segment abgefahren wurde dann scannen
                     StartCoroutine(ScanningCoroutine());
