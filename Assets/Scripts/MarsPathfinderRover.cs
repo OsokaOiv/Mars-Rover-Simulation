@@ -6,9 +6,9 @@ public class MarsPathfinderRover : MonoBehaviour {
     public int TimeMultiplier = 100; // Geschwindigkeit der Zeit
     [SerializeField] private LayerMask GroundLayer;
     [SerializeField] private string GroundName;
-    private const float MovementSpeed = .0069f; // 0,69 cm/s
+    private const float MovementSpeed = .0067f; // 0,67 cm/s
     private const float SegmentLength = .065f; // 6,5 cm
-    private const float RoverDiskRadius = 2.5f; // 2,5 m
+    private const float RoverDiskRadius = 1f; // 2,5 m
     private const float ScanningTime = 120; // 120 s
     private const float RoverHeightAboveGround = .05f;
     private const float MaxTurnAngle = 1;
@@ -125,7 +125,7 @@ public class MarsPathfinderRover : MonoBehaviour {
 
     // Stellt die Distanz ein
     private void NoHazardInView() {
-        DistanceToDrive = SegmentLength * 10;
+        DistanceToDrive = SegmentLength * 5;
         ShouldTurnToWaypoint = true;
     }
 
